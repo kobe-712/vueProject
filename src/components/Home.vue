@@ -16,7 +16,7 @@
         <div class="toggleBtn" @click="closeBtn">|||</div>
         <!-- 侧边栏菜单区域 -->
         <el-menu
-          default-active="2"
+          :default-active="activePath"
           class="el-menu-vertical-demo"
           background-color="#333744"
           text-color="#fff"
@@ -48,6 +48,7 @@
               :index="'/' + childItem.path"
               v-for="childItem in item.children"
               :key="childItem.id"
+              @click="savePath('/' + childItem.path)"
             >
               <template slot="title">
                 <!-- 图标 -->
@@ -83,12 +84,16 @@ export default {
         145: 'el-icon-s-platform'
       },
       // 设置侧边栏是否收起
-      isCollapse: true
+      isCollapse: true,
+      // 设置侧边栏被激活路径
+      activePath: ''
     }
   },
-  // 在created生命周期函数上调用左侧菜单栏请求数据的函数
   created() {
+    // 在created生命周期函数上调用左侧菜单栏请求数据的函数
     this.getMenuList()
+    // 调用存储的路径，将其赋值给activePath
+    this.activePath = window.sessionStorage.getItem('savePath')
   },
   methods: {
     //   设置点击退出事件，清除token，强制跳转回登录页面
@@ -109,6 +114,13 @@ export default {
     // 设置侧边栏收起状态
     closeBtn() {
       this.isCollapse = !this.isCollapse
+    },
+    // 保存链接激活状态
+    savePath(savePath) {
+      // 点击每个子链接时，将当前路径存储
+      window.sessionStorage.setItem('savePath', savePath)
+      // 重新赋值
+      this.activePath = savePath
     }
   }
 }
