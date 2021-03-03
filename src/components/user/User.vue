@@ -58,12 +58,13 @@
           </template>
         </el-table-column>
         <el-table-column label="操作" width="180">
-          <template>
+          <template slot-scope="scope">
             <!-- 修改按钮 -->
             <el-button
               type="primary"
               icon="el-icon-edit"
               size="mini"
+              @click="showEditDialog(scope.row.id)"
             ></el-button>
             <!-- 删除按钮 -->
             <el-button
@@ -139,6 +140,33 @@
         <el-button type="primary" @click="addUser">确 定</el-button>
       </span>
     </el-dialog>
+
+    <!-- 修改用户信息的对话框 -->
+    <el-dialog title="修改用户" :visible.sync="editDialogVisible" width="50%">
+      <el-form
+        label-width="70px"
+        :model="editForm"
+        ref="editFormRef"
+      >
+        <!-- 接收editFrom中的数据 -->
+        <el-form-item label="用户名" prop="username">
+          <!-- 将数据进行双向绑定 -->
+          <el-input v-model="editForm.username"></el-input>
+        </el-form-item>
+        <el-form-item label="邮箱" prop="password">
+          <el-input v-model="editForm.email"></el-input>
+        </el-form-item>
+        <el-form-item label="手机号" prop="password">
+          <el-input v-model="editForm.password"></el-input>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="editDialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="editDialogVisible = false"
+          >确 定</el-button
+        >
+      </span>
+    </el-dialog>
   </div>
 </template>
 
@@ -176,8 +204,10 @@ export default {
       },
       userlist: [],
       total: 0,
-      // 控制添加用户对话框的添加与隐藏
+      // 控制添加用户对话框的显示与隐藏
       addDialogVisible: false,
+      // 控制修改用户对话框的显示与隐藏
+      editDialogVisible: false,
       // 添加用户的表单数据
       addForm: {
         username: '',
@@ -185,6 +215,8 @@ export default {
         email: '',
         mobile: ''
       },
+      // 编辑用户的表单数据
+      editForm: [],
       // 添加表单的验证规则对象
       addFormRules: {
         username: [
@@ -294,6 +326,16 @@ export default {
         this.addDialogVisible = false
         this.getUserlist()
       })
+    },
+    // 展示编辑用户的对话框
+    async showEditDialog(id) {
+      // console.log(id)
+      const { data: res } = await this.$http.get('users/' + id)
+      if (res.meta.status !== 200) {
+        return this.$message.error('查询用户信息失败！')
+      }
+      this.editForm = res.data
+      this.editDialogVisible = true
     }
   }
 }
