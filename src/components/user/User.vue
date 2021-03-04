@@ -46,7 +46,7 @@
         </el-table-column>
         <!-- prop传的值会被下面的作用域插槽传的值覆盖，不需要重复定义 -->
         <el-table-column label="状态">
-          <!-- 名为data 值为scope的数据将会被slot-scope接收 -->
+          <!-- 将父组件上绑定的userlist传到slot-scope上，值为scope -->
           <template slot-scope="scope">
             <!-- 监听开关的change事件，如果发生改变
                  立即发起ajax请求，给开关传入数据，让其去改变数据库中的数据 -->
@@ -71,6 +71,7 @@
               type="danger"
               icon="el-icon-delete"
               size="mini"
+              @click="deleteUser(scope.row.id)"
             ></el-button>
             <!-- 分配角色按钮 -->
             <el-tooltip
@@ -142,29 +143,33 @@
     </el-dialog>
 
     <!-- 修改用户信息的对话框 -->
-    <el-dialog title="修改用户" :visible.sync="editDialogVisible" width="50%">
+    <el-dialog
+      title="修改用户"
+      :visible.sync="editDialogVisible"
+      width="50%"
+      @close="editDialogClose"
+    >
       <el-form
         label-width="70px"
         :model="editForm"
+        :rules="editFormRules"
         ref="editFormRef"
       >
         <!-- 接收editFrom中的数据 -->
-        <el-form-item label="用户名" prop="username">
+        <el-form-item label="用户名">
           <!-- 将数据进行双向绑定 -->
-          <el-input v-model="editForm.username"></el-input>
+          <el-input v-model="editForm.username" :disabled="true"></el-input>
         </el-form-item>
-        <el-form-item label="邮箱" prop="password">
+        <el-form-item label="邮箱" prop="email">
           <el-input v-model="editForm.email"></el-input>
         </el-form-item>
-        <el-form-item label="手机号" prop="password">
-          <el-input v-model="editForm.password"></el-input>
+        <el-form-item label="手机号" prop="mobile">
+          <el-input v-model="editForm.mobile"></el-input>
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
         <el-button @click="editDialogVisible = false">取 消</el-button>
-        <el-button type="primary" @click="editDialogVisible = false"
-          >确 定</el-button
-        >
+        <el-button type="primary" @click="editUserInfo()">确 定</el-button>
       </span>
     </el-dialog>
   </div>
@@ -217,6 +222,24 @@ export default {
       },
       // 编辑用户的表单数据
       editForm: [],
+      // 编辑表单的验证规则
+      editFormRules: {
+        username: [{ required: true }],
+        email: [
+          {
+            required: true,
+            message: '请输入用户名',
+            trigger: 'blur'
+          }
+        ],
+        mobile: [
+          {
+            required: true,
+            message: '请输入手机号',
+            trigger: 'blur'
+          }
+        ]
+      },
       // 添加表单的验证规则对象
       addFormRules: {
         username: [
@@ -278,7 +301,7 @@ export default {
       }
       this.userlist = res.data.users
       this.total = res.data.total
-      console.log(res)
+      // console.log(res)
     },
     // 监听pagesize改变的事件
     handleSizeChange(newSize) {
@@ -322,9 +345,12 @@ export default {
         if (res.meta.status !== 201) {
           this.$message.error('添加失败！')
         }
-        this.$message.success('添加成功！')
+        // 关闭添加对话框
         this.addDialogVisible = false
+        // 重新刷新页面
         this.getUserlist()
+        // 提示添加成功
+        this.$message.success('添加成功！')
       })
     },
     // 展示编辑用户的对话框
@@ -336,6 +362,58 @@ export default {
       }
       this.editForm = res.data
       this.editDialogVisible = true
+    },
+    // 监听编辑用户对话框关闭
+    editDialogClose() {
+      this.$refs.editFormRef.resetFields()
+    },
+    // 修改用户信息并提交
+    editUserInfo() {
+      this.$refs.editFormRef.validate(async valid => {
+        if (!valid) return
+        // 成功后发起请求拿到editForm中的数据进行修改
+        const { data: res } = await this.$http.put(
+          'users/' + this.editForm.id,
+          { email: this.editForm.email, mobile: this.editForm.mobile }
+        )
+        if (res.meta.status !== 200) {
+          return this.$message.error('修改用户信息失败！')
+        }
+        // 关闭对话框
+        this.editDialogVisible = false
+        // 刷新数据列表
+        this.getUserlist()
+        // 提示修改成功
+        this.$message.success('修改成功！')
+      })
+    },
+    // 刪除用戶
+    async deleteUser(id) {
+      await this.$confirm('此操作将永久删除该用戶, 是否继续?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      })
+        // 点击确定按钮
+        .then(async () => {
+          const { data: res } = await this.$http.delete('users/' + id)
+          console.log(res)
+          if (res.meta.status !== 200) {
+            return this.$message.error('刪除用戶失败！')
+          }
+          this.getUserlist()
+          this.$message({
+            type: 'success',
+            message: '删除成功!'
+          })
+        })
+        // 点击取消按钮
+        .catch(() => {
+          this.$message({
+            type: 'info',
+            message: '已取消删除'
+          })
+        })
     }
   }
 }

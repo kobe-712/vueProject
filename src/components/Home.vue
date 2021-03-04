@@ -109,7 +109,7 @@ export default {
       // 判断请求数据的状态，请求成功才将数据赋值给menulist
       if (res.meta.status !== 200) return this.$message.error(res.meta.msg)
       this.menulist = res.data
-      console.log(res)
+      // console.log(res)
     },
     // 设置侧边栏收起状态
     closeBtn() {
